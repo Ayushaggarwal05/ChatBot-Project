@@ -1,6 +1,7 @@
 const chatBody = document.querySelector(".chat-body");
 const messageInput = document.querySelector(".message-input");
 const sendMessageButton = document.querySelector("#send-message");
+const fileInput = document.querySelector("#file-input");
 
 
 //API setup>>
@@ -19,8 +20,8 @@ const createMessageElement = (content , ...classes) => {
 }
 
 const generateBotResponse = async (incomingMessageDiv) => {
-    const messageElement = incomingMessageDiv.querySelector(".message-text");
-    const requesOptions = {
+    const messageElement = incomingMessageDiv.querySelector(" .message-text");
+    const requestOptions = {
         method : "POST",
         headers : { "Content-Type" : "application/json"},
         body : JSON.stringify({
@@ -31,14 +32,20 @@ const generateBotResponse = async (incomingMessageDiv) => {
     }
 
     try{
-        const response = await fetch(API_URL,requesOptions);
+        const response = await fetch(API_URL,requestOptions);
         const data = await response.json();
         if(!response.ok) throw new Error(data.error.message);
 
-        const apiResponseText = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, "$1").trim();
+        // const apiResponseText = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, "$1").trim();
+        const apiResponseText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/\*\*(.*?)\*\*/g, "$1").trim() || "I'm not sure how to respond.";
+
         messageElement.innerText = apiResponseText;
+
     }catch (error) {
         console.log(error);
+        messageElement.innerText = error.message;
+        messageElement.style.color = "#ff0000";
+
 
     } finally{
         incomingMessageDiv.classList.remove("thinking");
@@ -75,7 +82,7 @@ const handleOutgoingMessage = (e) => {
         const incomingMessageDiv = createMessageElement(messageContent, "bot-message","thinking");
         chatBody.appendChild(incomingMessageDiv);
         chatBody.scrollTo({ top: chatBody.scrollHeight , behavior: "smooth" });  
-        generateBotResponse();
+        generateBotResponse(incomingMessageDiv);
 
     },600);
 
@@ -88,4 +95,13 @@ messageInput.addEventListener("keydown",(e) => {
     }
 });
 
+fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if(!file) return;
+
+    console.log(file);
+});
+
 sendMessageButton.addEventListener("click" , (e) => handleOutgoingMessage(e));
+
+document.querySelector("#file-upload").addEventListener("click", () => fileInput.click());
