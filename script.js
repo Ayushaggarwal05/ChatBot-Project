@@ -2,6 +2,8 @@ const chatBody = document.querySelector(".chat-body");
 const messageInput = document.querySelector(".message-input");
 const sendMessageButton = document.querySelector("#send-message");
 const fileInput = document.querySelector("#file-input");
+const fileUploadWrapper = document.querySelector(".file-upload-wrapper");
+const fileCancelButton = document.querySelector("#file-cancel");
 
 
 //API setup>>
@@ -9,7 +11,11 @@ const API_KEY = "AIzaSyBNK473IvuN-lYJWjkTzWAHUMfAy6RaB9U";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
 const userData = {
-    message: null
+    message: null,
+    file : {
+        data : null,
+        mime_type: null
+    }
 }
 
 const createMessageElement = (content , ...classes) => {
@@ -21,12 +27,14 @@ const createMessageElement = (content , ...classes) => {
 
 const generateBotResponse = async (incomingMessageDiv) => {
     const messageElement = incomingMessageDiv.querySelector(" .message-text");
+
+    //API Request option for posting 
     const requestOptions = {
         method : "POST",
         headers : { "Content-Type" : "application/json"},
         body : JSON.stringify({
             "contents" : [{
-                "parts":[{"text": userData.message }]
+                "parts":[{"text": userData.message },...(userData.file.data ? [{ inline_data: userData.file}] : [] )]
                 }]
         })
     }
@@ -48,6 +56,8 @@ const generateBotResponse = async (incomingMessageDiv) => {
 
 
     } finally{
+        // removing pic from the chat if seclected by the user
+        userData.file = {};
         incomingMessageDiv.classList.remove("thinking");
         chatBody.scrollTo({ top: chatBody.scrollHeight , behavior: "smooth" });  
     }
@@ -56,11 +66,14 @@ const generateBotResponse = async (incomingMessageDiv) => {
 
 const handleOutgoingMessage = (e) => {
     e.preventDefault();
-
     userData.message = messageInput.value.trim();
     messageInput.value = "";
+    fileUploadWrapper.classList.remove("file-uploaded");
 
-    const messageContent = `<div class="message-text"></div>`;
+    // display user message
+    const messageContent = `<div class="message-text"></div>
+                            ${userData.file.data ? `<img src="data:${userData.file.mime_type};base64,${userData.file.data}" class="attachment" />`: ""}`;
+
     const outgoingMessageDiv = createMessageElement(messageContent, "user-message");
     outgoingMessageDiv.querySelector(".message-text").textContent = userData.message;
     chatBody.appendChild(outgoingMessageDiv);
@@ -84,7 +97,7 @@ const handleOutgoingMessage = (e) => {
         chatBody.scrollTo({ top: chatBody.scrollHeight , behavior: "smooth" });  
         generateBotResponse(incomingMessageDiv);
 
-    },600);
+    },200);
 
 }
 
@@ -95,11 +108,32 @@ messageInput.addEventListener("keydown",(e) => {
     }
 });
 
+
+//FILE input>>
 fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if(!file) return;
 
-    console.log(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        fileUploadWrapper.querySelector("img").src = e.target.result;
+        fileUploadWrapper.classList.add("file-uploaded");
+        const base64String = e.target.result.split(",")[1];
+
+        userData.file = {
+            data : base64String,
+            mime_type: file.type
+        }
+        
+        fileInput.value = "";
+    }
+
+    reader.readAsDataURL(file);
+});
+
+fileCancelButton.addEventListener("click", () => {
+    userData.file = {};
+    fileUploadWrapper.classList.remove("file-uploaded");
 });
 
 sendMessageButton.addEventListener("click" , (e) => handleOutgoingMessage(e));
