@@ -35,7 +35,7 @@
             <form action="#" class="chat-form">
                 <textarea placeholder="Message..." class="message-input" required ></textarea>
                 <div class="chat-controls">
-                    <button type="button"><i class="fa-regular fa-face-smile"></i></button> <!--Emojis button-->
+                    <button type="button" id="emoji-picker"><i class="fa-regular fa-face-smile"></i></button> <!--Emojis button-->
                     <div class="file-upload-wrapper">
                         <input type="file" accept="images/*" id="file-input" hidden>
                         <img src="#">
@@ -48,6 +48,8 @@
 
         </div>
     </div>
+    <!-- emoji script -->
+    <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
 
     <script src="script.js"></script>
     
